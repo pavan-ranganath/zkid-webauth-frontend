@@ -75,6 +75,7 @@
               "browserTarget": "angular-registration-login-example:build:development"
             }
           },
+          "options": {"proxyConfig": "src/proxy.conf.json"},
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
@@ -103,5 +104,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

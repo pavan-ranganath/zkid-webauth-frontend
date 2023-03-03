@@ -24,16 +24,25 @@ export class AccountService {
         return this.userSubject.value;
     }
 
-    login(username: string, password: string) {
-        return this.http.post<User>(`${environment.apiUrl}/users/authenticate`, { username, password })
-            .pipe(map(user => {
-                // store user details and jwt token in local storage to keep user logged in between page refreshes
-                localStorage.setItem('user', JSON.stringify(user));
-                this.userSubject.next(user);
-                return user;
-            }));
+    passKeyRegister(email: string) {
+        return this.http.get(`${environment.apiUrl}/v1/auth/generate-registration-options`,{params:{email:email}})
+            // .pipe(map(user => {
+            //     // store user details and jwt token in local storage to keep user logged in between page refreshes
+            //     // localStorage.setItem('user', JSON.stringify(user));
+            //     // this.userSubject.next(user);
+            //     return user;
+            // }));
+    }
+    passKeyVerificationResp(opts:any) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/verify-registration`, opts,);
     }
 
+    passKeylogin(email: string) {
+        return this.http.get(`${environment.apiUrl}/v1/auth/generate-authentication-options`,{params:{email:email}})
+    }
+    passKeyLoginVerify(opts:any) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/verify-authentication`, opts,);
+    }
     logout() {
         // remove user from local storage and set current user to null
         localStorage.removeItem('user');
