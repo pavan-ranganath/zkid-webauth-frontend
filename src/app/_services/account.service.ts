@@ -88,4 +88,11 @@ export class AccountService {
                 return x;
             }));
     }
-}
+
+    entradaAuthRegister(opts:any) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/generate-entrada-registration-options`, opts);
+    }
+    entradaAuthRegistrationVerification(opts:any) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/verify-entrada-registration`, opts);
+    }
+}   
