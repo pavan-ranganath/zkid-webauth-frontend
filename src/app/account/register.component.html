@@ -1,7 +1,7 @@
 ﻿<div class="card">
     <h4 class="card-header">Register</h4>
     <div class="card-body">
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <form [formGroup]="form" >
             <div class="mb-3">
                 <label class="form-label">Name</label>
                 <input type="text" formControlName="name" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.name.errors }" />
@@ -17,12 +17,19 @@
                 </div>
             </div>
             <div>
-                <button [disabled]="loading" class="btn btn-primary">
+                <button [disabled]="registerDisabled" class="btn btn-primary" (click)="register()">
                     <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
                     Register
                 </button>
                 <!-- <a routerLink="../register" class="btn btn-link">Register</a> -->
+                
+                    <button style="margin-left: 20px;" [disabled]="loginDisabled" class="btn btn-primary" (click)="login()">
+                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+                        Login
+                    </button>
             </div>
+          
+            
         </form>
     </div>
     <div *ngIf="userInfo" class="card-body">

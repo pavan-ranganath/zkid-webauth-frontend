@@ -95,4 +95,8 @@ export class AccountService {
     entradaAuthRegistrationVerification(opts:any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/verify-entrada-registration`, opts);
     }
+
+    entradaAuthLogin(opts:any) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/entrada-login`, opts);
+    }
 }   
