@@ -16,6 +16,8 @@ import * as libSodiumWrapper from "libsodium-wrappers";
 
 import { encrypt, decrypt, sign } from '../_helpers/ed25519Wrapper';
 import { KeyPair, randombytes_buf } from 'libsodium-wrappers';
+import { CookieStorage } from 'cookie-storage';
+
 @Component({ templateUrl: 'register.component.html' })
 export class RegisterComponent implements OnInit {
     form!: FormGroup;
@@ -25,11 +27,15 @@ export class RegisterComponent implements OnInit {
     loginDisabled = false;
     userInfo: any;
     userList: any[] | undefined = [];
+    cookieStorage = new CookieStorage();
+
     constructor(
         private formBuilder: FormBuilder,
         private accountService: AccountService,
         private alertService: AlertService,
         private router: Router,
+        private route: ActivatedRoute,
+        // private cookieStorage:CookieStorage
     ) { }
 
     ngOnInit() {
@@ -54,10 +60,10 @@ export class RegisterComponent implements OnInit {
             }
         });
     }
-
+    
     getregisteredUserList() {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
+        for (let i = 0; i < this.cookieStorage.length; i++) {
+            const key = this.cookieStorage.key(i)
             this.userList?.push(key);
         }
     }
@@ -141,7 +147,7 @@ export class RegisterComponent implements OnInit {
                     console.log(opts);
                 },
                 error: error => {
-                    localStorage.removeItem(this.form.value['username'])
+                    this.cookieStorage.removeItem(this.form.value['username'])
                     this.alertService.error(error);
                     this.loading = false;
                 },
@@ -151,10 +157,12 @@ export class RegisterComponent implements OnInit {
             });
     }
     private storeUserKeys(username: string, value: Object) {
-        localStorage.setItem(username, JSON.stringify(value));
+        this.cookieStorage.setItem(username, JSON.stringify(value));
+        // localStorage.setItem(username, JSON.stringify(value));
     }
     private getUserKeys(username: string) {
-        return localStorage.getItem(username)
+        // return localStorage.getItem(username)
+        return this.cookieStorage.getItem(username);
     }
     async challengeReceived(respObj: any, userKey: KeyPair, username: string) {
         const encryptedChallenge = respObj.encryptedChallenge;
@@ -206,7 +214,7 @@ export class RegisterComponent implements OnInit {
                 error: error => {
                     this.alertService.error(error);
                     this.loading = false;
-                    localStorage.removeItem(this.form.value['username'])
+                    this.cookieStorage.removeItem(this.form.value['username'])
                 },
                 complete: () => {
                     this.loading = false;
@@ -249,7 +257,13 @@ export class RegisterComponent implements OnInit {
         .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    this.router.navigateByUrl('/home');
+                    this.accountService.loginSuccess({
+                        username: username,
+                        name: this.form.value.name,
+                    })
+                    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+                    this.router.navigateByUrl(returnUrl);
+                    // this.router.navigateByUrl('/home');
                 },
                 error: error => {
                     this.alertService.error(error);

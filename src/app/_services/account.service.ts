@@ -47,7 +47,7 @@ export class AccountService {
         // remove user from local storage and set current user to null
         localStorage.removeItem('user');
         this.userSubject.next(null);
-        this.router.navigate(['/account/login']);
+        this.router.navigate(['/account/register']);
     }
 
     register(user: User) {
@@ -98,5 +98,10 @@ export class AccountService {
 
     entradaAuthLogin(opts:any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/entrada-login`, opts);
+    }
+    public loginSuccess(user: User) {
+        localStorage.setItem('user', JSON.stringify(user));
+        this.userSubject.next(user);
+        return user;
     }
 }   
