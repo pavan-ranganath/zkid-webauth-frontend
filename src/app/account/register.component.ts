@@ -50,6 +50,11 @@ export class RegisterComponent implements OnInit {
         });
     }
     private checkUserExistsInStorage(x: any) {
+        if(!this.userList?.length) {
+            this.registerDisabled = false;
+            this.loginDisabled = true;
+            return
+        }
         this.userList!.forEach(element => {
             if (element === x) {
                 this.registerDisabled = true;
@@ -157,7 +162,13 @@ export class RegisterComponent implements OnInit {
             });
     }
     private storeUserKeys(username: string, value: Object) {
-        this.cookieStorage.setItem(username, JSON.stringify(value));
+        this.cookieStorage.setItem(username, JSON.stringify(value),{
+            path: '/',
+            domain: 'localhost',
+            expires: addOneYear(new Date()),
+            secure: true,
+            sameSite: 'Strict' // Can be 'Strict' or 'Lax'.
+          });
         // localStorage.setItem(username, JSON.stringify(value));
     }
     private getUserKeys(username: string) {
@@ -275,3 +286,7 @@ export class RegisterComponent implements OnInit {
             });
     }
 }
+function addOneYear(date:any) {
+    date.setFullYear(date.getFullYear() + 1);
+    return date;
+  }
