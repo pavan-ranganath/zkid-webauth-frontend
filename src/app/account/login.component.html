@@ -1,22 +1,33 @@
-﻿
-<div class="card">
+﻿<div class="card">
     <h4 class="card-header">Login</h4>
     <div class="card-body">
-        <form [formGroup]="loginForm" (ngSubmit)="loginOnSubmit()">
+        <form [formGroup]="form">
+            <!-- <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input type="text" formControlName="name" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.name.errors }" />
+                <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
+                    <div *ngIf="f.name.errors.required">Name is required</div>
+                </div>
+            </div> -->
             <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input type="text" formControlName="email" class="form-control" [ngClass]="{ 'is-invalid': submitted && fLogin.email.errors }" />
-                <div *ngIf="submitted && fLogin.email.errors" class="invalid-feedback">
-                    <div *ngIf="fLogin.email.errors.required">email is required</div>
+                <label class="form-label">Username</label>
+                <input type="text" formControlName="username" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.username.errors }" />
+                <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
+                    <div *ngIf="f.username.errors.required">Username is required</div>
                 </div>
             </div>
             <div>
-                <button [disabled]="loginLoading" class="btn btn-primary">
-                    <span *ngIf="loginLoading" class="spinner-border spinner-border-sm me-1"></span>
+                <button [disabled]="loginDisabled" class="btn btn-primary" (click)="login()">
+                    <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
                     Login
                 </button>
-                <!-- <a routerLink="../register" class="btn btn-link">Register</a> -->
             </div>
+            <span>
+                Don't have account yet? <a href="/account/register">Register</a> 
+            </span> 
         </form>
     </div>
+   
 </div>

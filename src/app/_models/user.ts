@@ -4,4 +4,5 @@
     password?: string;
     name?:string;
     token?: string;
+    isEmailVerified?:boolean;
 }

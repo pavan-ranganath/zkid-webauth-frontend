@@ -47,7 +47,7 @@ export class AccountService {
         // remove user from local storage and set current user to null
         localStorage.removeItem('user');
         this.userSubject.next(null);
-        this.router.navigate(['/account/register']);
+        this.router.navigate(['/account/login']);
     }
 
     register(user: User) {
@@ -103,5 +103,8 @@ export class AccountService {
         localStorage.setItem('user', JSON.stringify(user));
         this.userSubject.next(user);
         return user;
+    }
+    verifyEmail(token:string) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/verify-email?token=${token}`,null)
     }
 }   

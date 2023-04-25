@@ -1,17 +1,19 @@
 ﻿<div class="card">
     <h4 class="card-header">Register</h4>
     <div class="card-body">
-        <form [formGroup]="form" >
+        <form [formGroup]="form">
             <div class="mb-3">
                 <label class="form-label">Name</label>
-                <input type="text" formControlName="name" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.name.errors }" />
+                <input type="text" formControlName="name" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.name.errors }" />
                 <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
                     <div *ngIf="f.name.errors.required">Name is required</div>
                 </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Username</label>
-                <input type="text" formControlName="username" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.username.errors }" />
+                <input type="text" formControlName="username" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.username.errors }" />
                 <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
                     <div *ngIf="f.username.errors.required">Username is required</div>
                 </div>
@@ -21,16 +23,11 @@
                     <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
                     Register
                 </button>
-                <!-- <a routerLink="../register" class="btn btn-link">Register</a> -->
-                
-                    <button style="margin-left: 20px;" [disabled]="loginDisabled" class="btn btn-primary" (click)="login()">
-                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
-                        Login
-                    </button>
             </div>
-          
-            
         </form>
+        <div *ngIf="registrationSuccess">
+            Registration success click here to <a href="/account/login">login</a>
+        </div>
     </div>
     <div *ngIf="userInfo" class="card-body">
         <pre>{{userInfo | json }}</pre>

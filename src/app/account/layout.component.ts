@@ -13,5 +13,8 @@ export class LayoutComponent {
         if (this.accountService.userValue) {
             this.router.navigate(['/']);
         }
+        //  else {
+        //     this.router.navigate(['/login']);
+        // }
     }
 }

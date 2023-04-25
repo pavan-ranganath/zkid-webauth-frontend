@@ -28,6 +28,7 @@ export class RegisterComponent implements OnInit {
     userInfo: any;
     userList: any[] | undefined = [];
     cookieStorage = new CookieStorage();
+    registrationSuccess = false;
 
     constructor(
         private formBuilder: FormBuilder,
@@ -157,7 +158,7 @@ export class RegisterComponent implements OnInit {
                     this.loading = false;
                 },
                 complete: () => {
-                    this.loading = false;
+                    // this.loading = false;
                 },
             });
     }
@@ -218,13 +219,14 @@ export class RegisterComponent implements OnInit {
                     let tempKeyStoreObj = JSON.parse(userKeyStore)
 
                     // STORE USER INFO IN LOCAL STORAGE
-                    this.storeUserKeys(username, { ...tempKeyStoreObj, userId: opts.userId, registrationCode: plainRegistrationCode })
+                    this.storeUserKeys(username, { ...tempKeyStoreObj, userId: opts.userId, registrationCode: plainRegistrationCode, name: this.form.value.name })
                     this.userInfo = { ...tempKeyStoreObj, userId: opts.userId, registrationCode: plainRegistrationCode };
+                    this.registrationSuccess = true;
                     alert("SUCCESS!! REGISTRATION COMPLETED")
                 },
                 error: error => {
                     this.alertService.error(error);
-                    this.loading = false;
+                    // this.loading = false;
                     this.cookieStorage.removeItem(this.form.value['username'])
                 },
                 complete: () => {
@@ -235,56 +237,7 @@ export class RegisterComponent implements OnInit {
             });
 
     }
-    login() {
-        this.submitted = true;
 
-        // reset alerts on submit
-        this.alertService.clear();
-
-        // stop here if form is invalid
-        if (this.form.invalid) {
-            return;
-        }
-        this.loading = true;
-
-        
-        const username = this.form.value.username
-        let userKeyStore = this.getUserKeys(username)
-        if (!userKeyStore) {
-            alert("Error!!, keystore not found")
-            return
-        }
-        let keyStoreObj = JSON.parse(userKeyStore)
-         // CREATE MESSAGE AND SIGN
-         let plainMsg = `I, ${username} would like to login with my challenge code: ${keyStoreObj.registrationCode} with user ID: ${keyStoreObj.userId}`;
-         let signedMsg = signEncode(plainMsg, decodeBase64(keyStoreObj.privateKey));
-
-        let reqObj = {
-            username: username,
-            signedMsg: signedMsg,
-            plainMsg: plainMsg
-        }
-        this.accountService.entradaAuthLogin(reqObj)
-        .pipe(first())
-            .subscribe({
-                next: (opts: any) => {
-                    this.accountService.loginSuccess({
-                        username: username,
-                        name: this.form.value.name,
-                    })
-                    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-                    this.router.navigateByUrl(returnUrl);
-                    // this.router.navigateByUrl('/home');
-                },
-                error: error => {
-                    this.alertService.error(error);
-                    this.loading = false;
-                },
-                complete: () => {
-                    this.loading = false;
-                },
-            });
-    }
 }
 function addOneYear(date:any) {
     date.setFullYear(date.getFullYear() + 1);
