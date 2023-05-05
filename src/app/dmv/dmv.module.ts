@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 
 import { DmvRoutingModule } from './dmv-routing.module';
 import { LayoutComponent } from './layout.component';
-import { AddDmvUserComponent } from './add-dmv-user.component';
+import { AddDmvRecordComponent } from './add-dmv-record.component';
 
 
 @NgModule({
@@ -15,7 +15,7 @@ import { AddDmvUserComponent } from './add-dmv-user.component';
     ],
     declarations: [
         LayoutComponent,
-        AddDmvUserComponent
+        AddDmvRecordComponent
     ]
 })
 export class DmvModule { }

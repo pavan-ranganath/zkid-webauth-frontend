@@ -8,7 +8,7 @@ import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import { AccountService, AlertService } from '@app/_services';
 import { AuthenticationResponseJSON } from '@simplewebauthn/typescript-types';
 import { CookieStorage } from 'cookie-storage';
-import { signEncode } from '@app/_helpers/ed25519Wrapper';
+import { generateSharedKey, signEncode } from '@app/_helpers/ed25519Wrapper';
 import { decodeBase64 } from 'tweetnacl-util';
 
 @Component({ templateUrl: 'login.component.html' })
@@ -157,7 +157,9 @@ export class LoginComponent implements OnInit {
             .subscribe({
                 next: (succResp: any) => {
                     console.log("succResp",succResp);
-                    this.accountService.loginSuccess(succResp.user)
+                     // GENERATE SHARED SECRET
+                    let sharedKey = generateSharedKey(decodeBase64(keyStoreObj.privateKey), decodeBase64(succResp.ephemeralPubKey))
+                    this.accountService.loginSuccess(succResp.user,sharedKey)
                     const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
                     this.router.navigateByUrl(returnUrl);
                     // this.router.navigateByUrl('/home');

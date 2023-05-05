@@ -6,24 +6,32 @@ import { map } from 'rxjs/operators';
 
 import { environment } from '@environments/environment';
 import { User } from '@app/_models';
+import { encodeBase64 } from 'tweetnacl-util';
+import { CookieStorage } from 'cookie-storage';
 
 @Injectable({ providedIn: 'root' })
 export class AccountService {
     private userSubject: BehaviorSubject<User | null>;
     public user: Observable<User | null>;
-
+    public keyStore: Observable<any | null>;
+    private keyStoreSubject: BehaviorSubject<any | null>;
+    cookieStorage = new CookieStorage();
     constructor(
         private router: Router,
         private http: HttpClient
     ) {
         this.userSubject = new BehaviorSubject(JSON.parse(localStorage.getItem('user')!));
+        this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
         this.user = this.userSubject.asObservable();
+        this.keyStore = this.keyStoreSubject.asObservable();
     }
 
     public get userValue() {
         return this.userSubject.value;
     }
-
+    public get keyStoreValue() {
+        return this.keyStoreSubject.value;
+    }
     passKeyRegister(email: string) {
         return this.http.get(`${environment.apiUrl}/v1/auth/generate-registration-options`,{params:{email:email}})
             // .pipe(map(user => {
@@ -99,12 +107,19 @@ export class AccountService {
     entradaAuthLogin(opts:any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/entrada-login`, opts);
     }
-    public loginSuccess(user: User) {
+    public loginSuccess(user: User, keyStore:any) {
         localStorage.setItem('user', JSON.stringify(user));
+        // sessionStorage.setItem('keyStore',encodeBase64(keyStore));
         this.userSubject.next(user);
+        let userKeyStoreObj = JSON.parse(this.cookieStorage.getItem(user.username!)!)
+        this.keyStoreSubject.next(userKeyStoreObj);
         return user;
     }
     verifyEmail(token:string) {
         return this.http.post(`${environment.apiUrl}/v1/auth/verify-email?token=${token}`,null)
+    }
+    private getUserKeys(username: string) {
+        // return localStorage.getItem(username)
+        return this.cookieStorage.getItem(username);
     }
 }   

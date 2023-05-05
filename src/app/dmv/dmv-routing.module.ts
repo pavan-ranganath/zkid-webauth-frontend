@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 import { LayoutComponent } from './layout.component';
-import { AddDmvUserComponent } from './add-dmv-user.component';
+import { AddDmvRecordComponent } from './add-dmv-record.component';
 
 
 const routes: Routes = [
@@ -10,7 +10,7 @@ const routes: Routes = [
         path: '', component: LayoutComponent,
         children: [
             // { path: '', component: ListComponent },
-            { path: 'add', component: AddDmvUserComponent },
+            { path: 'add', component: AddDmvRecordComponent },
             // { path: 'edit/:id', component: AddEditComponent }
         ]
     }
