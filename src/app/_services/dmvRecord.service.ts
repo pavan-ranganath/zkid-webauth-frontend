@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { environment } from '@environments/environment';
@@ -10,7 +9,7 @@ import { AccountService } from './account.service';
 export class DmvRecordService {
     keyStore: any;
 
-    constructor(private router: Router,
+    constructor(
         private accountService:AccountService,
         private http: HttpClient) {
              this.keyStore = this.accountService.keyStoreValue; 
@@ -27,6 +26,9 @@ export class DmvRecordService {
     }
     getById(id: string) {
         return this.http.get<User>(`${environment.apiUrl}/v1/dmv-record/${id}`);
+    }
+    getByUserId(id: string) {
+        return this.http.get<any>(`${environment.apiUrl}/v1/dmv-record/user/${id}`);
     }
     update(id: string, params: any) {
         return this.http.put(`${environment.apiUrl}/v1/dmv-record/${id}`, params);    

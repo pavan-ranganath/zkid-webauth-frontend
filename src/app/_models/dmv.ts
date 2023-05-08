@@ -7,3 +7,7 @@ export class DMVRecord {
     attestor?: string;
     attestation_status?: 'ACCEPTED' | 'REJECTED' | 'PENDING'
 }
+export class DMVAttestors {
+    id?: string;
+    name?: string;
+}
