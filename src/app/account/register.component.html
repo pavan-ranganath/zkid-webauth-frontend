@@ -18,6 +18,22 @@
                     <div *ngIf="f.username.errors.required">Username is required</div>
                 </div>
             </div>
+            <div class="mb-3">
+                <label class="form-label">Private key</label>
+                <input type="text" formControlName="privateKey" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.privateKey.errors }" />
+                <div *ngIf="submitted && f.privateKey.errors" class="invalid-feedback">
+                    <div *ngIf="f.privateKey.errors.required">Private Key is required</div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Public key</label>
+                <input type="text" formControlName="publicKey" class="form-control"
+                    [ngClass]="{ 'is-invalid': submitted && f.publicKey.errors }" />
+                <div *ngIf="submitted && f.publicKey.errors" class="invalid-feedback">
+                    <div *ngIf="f.publicKey.errors.required">Public Key is required</div>
+                </div>
+            </div>
             <div>
                 <button [disabled]="registerDisabled" class="btn btn-primary" (click)="register()">
                     <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>

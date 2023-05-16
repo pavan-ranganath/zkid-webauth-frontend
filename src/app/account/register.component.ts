@@ -34,45 +34,18 @@ export class RegisterComponent implements OnInit {
         private formBuilder: FormBuilder,
         private accountService: AccountService,
         private alertService: AlertService,
-        private router: Router,
-        private route: ActivatedRoute,
-        // private cookieStorage:CookieStorage
     ) { }
 
     ngOnInit() {
-        this.getregisteredUserList()
         this.form = this.formBuilder.group({
-            name: ['', Validators.required],
-            username: ['', Validators.required],
-            // password: ['', Validators.required]
+            name: ['pavan ranganath', Validators.required],
+            username: ['pavanranganath94@gmail.com', Validators.required],
+            privateKey: ['3fee205a7213f013cd9bd3233af4bd2a66ee7286353a897efacda2f94dd067ce7bc994e7adbec518c6c48369d0754b1f197d23d419730568fdd301596018d3e6', Validators.required],
+            publicKey: ['7bc994e7adbec518c6c48369d0754b1f197d23d419730568fdd301596018d3e6', Validators.required]
         });
-        this.form.get("username")?.valueChanges.subscribe(x => {
-            this.checkUserExistsInStorage(x);
-        });
-    }
-    private checkUserExistsInStorage(x: any) {
-        if(!this.userList?.length) {
-            this.registerDisabled = false;
-            this.loginDisabled = true;
-            return
-        }
-        this.userList!.forEach(element => {
-            if (element === x) {
-                this.registerDisabled = true;
-                this.loginDisabled = false;
-            } else {
-                this.registerDisabled = false;
-                this.loginDisabled = true;
-            }
-        });
+        
     }
     
-    getregisteredUserList() {
-        for (let i = 0; i < this.cookieStorage.length; i++) {
-            const key = this.cookieStorage.key(i)
-            this.userList?.push(key);
-        }
-    }
 
     // convenience getter for easy access to form fields
     get f() { return this.form.controls; }
@@ -140,18 +113,18 @@ export class RegisterComponent implements OnInit {
         if (this.form.invalid) {
             return;
         }
-        const keyPair = await generateKeyPair();
+       
+
         this.loading = true;
-        let reqObj = { ...this.form.value, publicKey: encodeBase64(keyPair.publicKey) }
-        console.log(keyPair);
+        let reqObj = { ...this.form.value}
+        delete reqObj['privateKey']
         this.accountService.entradaAuthRegister(reqObj)
             .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    this.storeUserKeys(this.form.value['username'], { privateKey: encodeBase64(keyPair.privateKey), publicKey: encodeBase64(keyPair.publicKey), keyType: keyPair.keyType });
+                    this.storeUserKeys(this.form.value['username'], this.form.value);
                     // get return url from query parameters or default to home page
-                    this.challengeReceived(opts, keyPair, this.form.value['username']);
-                    console.log(opts);
+                    this.challengeReceived(opts, {privateKey:this.form.value.privateKey,publicKey:this.form.value.publicKey,keyType:'ed25519'}, this.form.value['username']);
                 },
                 error: error => {
                     this.cookieStorage.removeItem(this.form.value['username'])
@@ -179,7 +152,7 @@ export class RegisterComponent implements OnInit {
     }
     async challengeReceived(respObj: any, userKey: KeyPair, username: string) {
         const encryptedChallenge = respObj.encryptedChallenge;
-        const ephemeralPubKey = decodeBase64(respObj.ephemeralPubKey);
+        const ephemeralPubKey = (respObj.ephemeralPubKey);
         const userId = respObj.userId;
 
         // DECRYPT CHALLENGE USING USER PUBLIC KEY 
@@ -187,9 +160,9 @@ export class RegisterComponent implements OnInit {
 
         // GENERATE SHARED SECRET
         let sharedKey = generateSharedKey(userKey.privateKey, ephemeralPubKey)
-        console.log('sharedKey', encodeBase64(sharedKey));
+        console.log('sharedKey', sharedKey);
         // ENCRYPT CHALLENGE USING SHARED  KEY
-        var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES)
+        var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES,"hex")
         let challengeEncryptWithSharedKey = encryptWithSharedKey(challenge, sharedKey, nonce)
 
         // CREATE MESSAGE AND SIGN
@@ -200,7 +173,7 @@ export class RegisterComponent implements OnInit {
             plainMsg: plainMsg,
             signedMsg: signedMsg,
             encryptedChallengeWithShared: challengeEncryptWithSharedKey,
-            nonce: encodeBase64(nonce)
+            nonce: nonce
         }
 
 
@@ -216,7 +189,7 @@ export class RegisterComponent implements OnInit {
                     let registrationCode = opts.registrationCode
 
                     // DECRYPT REGISTRATION CODE
-                    let plainRegistrationCode = decryptWithSharedKey(registrationCode.encryptedData, sharedKey, decodeBase64(registrationCode.nonce))
+                    let plainRegistrationCode = decryptWithSharedKey(registrationCode.encryptedData, sharedKey, registrationCode.nonce)
                     let tempKeyStoreObj = JSON.parse(userKeyStore)
 
                     // STORE USER INFO IN LOCAL STORAGE
