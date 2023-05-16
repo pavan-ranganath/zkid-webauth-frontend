@@ -69,6 +69,12 @@
         <!-- <a routerLink="/users" class="btn btn-link">Cancel</a> -->
     </div>
 </form>
+<div *ngIf="readOnly">
+    <button (click)="submitToBlockChain()"  class="btn btn-primary">
+        Submit to blockchain
+    </button>
+    <!-- <a routerLink="/users" class="btn btn-link">Cancel</a> -->
+</div>
 <div *ngIf="loading" class="text-center m-5">
     <span class="spinner-border spinner-border-lg align-center"></span>
 </div>

@@ -10,4 +10,5 @@ export class DMVRecord {
 export class DMVAttestors {
     id?: string;
     name?: string;
+    publicAddress?: string;
 }

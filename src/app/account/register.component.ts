@@ -143,6 +143,7 @@ export class RegisterComponent implements OnInit {
         const keyPair = await generateKeyPair();
         this.loading = true;
         let reqObj = { ...this.form.value, publicKey: encodeBase64(keyPair.publicKey) }
+        console.log(keyPair);
         this.accountService.entradaAuthRegister(reqObj)
             .pipe(first())
             .subscribe({
