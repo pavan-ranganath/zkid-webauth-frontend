@@ -12,20 +12,19 @@ import { CookieStorage } from 'cookie-storage';
 @Injectable({ providedIn: 'root' })
 export class AccountService {
     private userSubject: BehaviorSubject<User | null>;
+    private keyStoreSubject: BehaviorSubject<any | null> | undefined;
+
     public user: Observable<User | null> | undefined;
     public keyStore: Observable<any | null> | undefined;
-    private keyStoreSubject: BehaviorSubject<any | null> | undefined;
     cookieStorage = new CookieStorage();
     constructor(
         private router: Router,
         private http: HttpClient
     ) {
         this.userSubject = new BehaviorSubject(JSON.parse(localStorage.getItem('user')!));
-        if(this.userValue){
-            this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
-            this.user = this.userSubject.asObservable();
-            this.keyStore = this.keyStoreSubject.asObservable();
-        }
+        this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
+        this.user = this.userSubject.asObservable();
+        this.keyStore = this.keyStoreSubject.asObservable();
     }
 
     public get userValue() {

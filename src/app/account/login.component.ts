@@ -145,7 +145,7 @@ export class LoginComponent implements OnInit {
         let keyStoreObj = JSON.parse(userKeyStore)
         // CREATE MESSAGE AND SIGN
         let plainMsg = `I, ${username} would like to login with my challenge code: ${keyStoreObj.registrationCode} with user ID: ${keyStoreObj.userId}`;
-        let signedMsg = signEncode(plainMsg, decodeBase64(keyStoreObj.privateKey));
+        let signedMsg = signEncode(plainMsg, (keyStoreObj.privateKey));
 
         let reqObj = {
             username: username,
@@ -158,7 +158,7 @@ export class LoginComponent implements OnInit {
                 next: (succResp: any) => {
                     console.log("succResp",succResp);
                      // GENERATE SHARED SECRET
-                    let sharedKey = generateSharedKey(decodeBase64(keyStoreObj.privateKey), decodeBase64(succResp.ephemeralPubKey))
+                    let sharedKey = generateSharedKey((keyStoreObj.privateKey), (succResp.ephemeralPubKey))
                     this.accountService.loginSuccess(succResp.user,sharedKey)
                     const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
                     this.router.navigateByUrl(returnUrl);
