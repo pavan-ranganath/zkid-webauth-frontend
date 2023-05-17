@@ -39,9 +39,9 @@ export class RegisterComponent implements OnInit {
     ngOnInit() {
         this.form = this.formBuilder.group({
             name: ['pavan ranganath', Validators.required],
-            username: ['pavanranganath94@gmail.com', Validators.required],
-            privateKey: ['3fee205a7213f013cd9bd3233af4bd2a66ee7286353a897efacda2f94dd067ce7bc994e7adbec518c6c48369d0754b1f197d23d419730568fdd301596018d3e6', Validators.required],
-            publicKey: ['7bc994e7adbec518c6c48369d0754b1f197d23d419730568fdd301596018d3e6', Validators.required]
+            username: ['pavanr@entradasolutions.com', Validators.required],
+            privateKey: ['DwwtIIzv1I_bCLi1b8n55otRqFlJWJGklgIgTrvWGul--ozG5WatTHWBHwG1FoL0YPhp4aCJ90_agGZTzK1LwA', Validators.required],
+            publicKey: ['fvqMxuVmrUx1gR8BtRaC9GD4aeGgifdP2oBmU8ytS8A', Validators.required]
         });
         
     }
@@ -162,7 +162,7 @@ export class RegisterComponent implements OnInit {
         let sharedKey = generateSharedKey(userKey.privateKey, ephemeralPubKey)
         console.log('sharedKey', sharedKey);
         // ENCRYPT CHALLENGE USING SHARED  KEY
-        var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES,"hex")
+        var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES,"base64")
         let challengeEncryptWithSharedKey = encryptWithSharedKey(challenge, sharedKey, nonce)
 
         // CREATE MESSAGE AND SIGN
