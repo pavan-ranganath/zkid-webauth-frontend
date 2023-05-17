@@ -48,7 +48,7 @@ export async function generateKeyPair(format: StringOutputFormat = "base64") {
     return libSodiumWrapper.crypto_sign_keypair(format)
 }
 
-export function generateSharedKey(privateKey: Uint8Array, publicKey: Uint8Array) {
+export function generateSharedKey(privateKey: string, publicKey: string) {
     return libSodiumWrapper.crypto_scalarmult(libSodiumWrapper.crypto_sign_ed25519_sk_to_curve25519(hexToUint8Arrray(privateKey)), libSodiumWrapper.crypto_sign_ed25519_pk_to_curve25519(hexToUint8Arrray(publicKey)))
 }
 export function decryptWithSharedKey(ciphertext: string, sharedKey: Uint8Array, nonce: Uint8Array) {

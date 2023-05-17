@@ -9,9 +9,9 @@ import { AccountService, AlertService } from '@app/_services';
 import { AuthenticationResponseJSON } from '@simplewebauthn/typescript-types';
 import { CookieStorage } from 'cookie-storage';
 import { generateSharedKey, signEncode } from '@app/_helpers/ed25519Wrapper';
-import { decodeBase64 } from 'tweetnacl-util';
+import { CommonService } from '@app/_services/common.service';
 
-@Component({ templateUrl: 'login.component.html' })
+@Component({ templateUrl: 'login.component.html'})
 // export class LoginComponent implements OnInit {
 //     submitted = false;
 //     loginForm!: FormGroup;
@@ -105,6 +105,7 @@ export class LoginComponent implements OnInit {
         private alertService: AlertService,
         private router: Router,
         private route: ActivatedRoute,
+        private common: CommonService
         // private cookieStorage:CookieStorage
     ) { }
 
@@ -125,7 +126,7 @@ export class LoginComponent implements OnInit {
     //     // return localStorage.getItem(username)
     //     return this.cookieStorage.getItem(username);
     // }
-    login() {
+    async login() {
         this.submitted = true;
 
         // reset alerts on submit
@@ -145,7 +146,10 @@ export class LoginComponent implements OnInit {
         //     return
         // }
         // let keyStoreObj = JSON.parse(userKeyStore)
-        let keyStoreObj = {privateKey: this.form.value.privateKey, publicKey: this.form.value.publicKey}
+       
+        let privKey = await this.common.readFileContent(this.form.value.privateKey)
+        let pubKey = await this.common.readFileContent(this.form.value.publicKey)
+        let keyStoreObj = {privateKey: privKey.split('\n')[1], publicKey: pubKey.split('\n')[1]}
 
         // CREATE MESSAGE AND SIGN
         let plainMsg = `I, ${username} would like to login`;
@@ -177,4 +181,5 @@ export class LoginComponent implements OnInit {
                 },
             });
     }
+   
 }

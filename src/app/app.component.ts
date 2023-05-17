@@ -12,11 +12,11 @@ export class AppComponent {
     constructor(private accountService: AccountService) {
         if(this.accountService.user) {
             this.accountService.user.subscribe(x => this.user = x);
-            this.check().then((succ)=>{
+            // this.check().then((succ)=>{
     
-            },(err) => {
-             console.error(err);
-            }) 
+            // },(err) => {
+            //  console.error(err);
+            // }) 
         }
        
     }

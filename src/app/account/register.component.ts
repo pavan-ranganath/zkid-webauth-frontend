@@ -15,8 +15,9 @@ import {
 import * as libSodiumWrapper from "libsodium-wrappers";
 
 import { encrypt, decrypt, sign } from '../_helpers/ed25519Wrapper';
-import { KeyPair, randombytes_buf } from 'libsodium-wrappers';
+import { KeyPair, StringKeyPair, randombytes_buf } from 'libsodium-wrappers';
 import { CookieStorage } from 'cookie-storage';
+import { CommonService } from '@app/_services/common.service';
 
 @Component({ templateUrl: 'register.component.html' })
 export class RegisterComponent implements OnInit {
@@ -34,14 +35,15 @@ export class RegisterComponent implements OnInit {
         private formBuilder: FormBuilder,
         private accountService: AccountService,
         private alertService: AlertService,
+        private common: CommonService
     ) { }
 
     ngOnInit() {
         this.form = this.formBuilder.group({
             name: ['pavan ranganath', Validators.required],
             username: ['pavanr@entradasolutions.com', Validators.required],
-            privateKey: ['DwwtIIzv1I_bCLi1b8n55otRqFlJWJGklgIgTrvWGul--ozG5WatTHWBHwG1FoL0YPhp4aCJ90_agGZTzK1LwA', Validators.required],
-            publicKey: ['fvqMxuVmrUx1gR8BtRaC9GD4aeGgifdP2oBmU8ytS8A', Validators.required]
+            privateKey: ['', Validators.required],
+            publicKey: ['', Validators.required]
         });
         
     }
@@ -116,15 +118,19 @@ export class RegisterComponent implements OnInit {
        
 
         this.loading = true;
-        let reqObj = { ...this.form.value}
-        delete reqObj['privateKey']
-        this.accountService.entradaAuthRegister(reqObj)
+
+        let privKey = (await this.common.readFileContent(this.form.value.privateKey)).split('\n')[1]
+        let pubKey = (await this.common.readFileContent(this.form.value.publicKey)).split('\n')[1]
+
+        // let reqObj = { ...this.form.value}
+        // delete reqObj['privateKey']
+        this.accountService.entradaAuthRegister({username: this.form.value.username, name:  this.form.value.name,publicKey:pubKey})
             .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    this.storeUserKeys(this.form.value['username'], this.form.value);
+                    this.storeUserKeys(this.form.value['username'], {username: this.form.value.username, publicKey:pubKey, privateKey: privKey});
                     // get return url from query parameters or default to home page
-                    this.challengeReceived(opts, {privateKey:this.form.value.privateKey,publicKey:this.form.value.publicKey,keyType:'ed25519'}, this.form.value['username']);
+                    this.challengeReceived(opts, {privateKey:privKey,publicKey:pubKey,keyType:'ed25519'}, this.form.value['username']);
                 },
                 error: error => {
                     this.cookieStorage.removeItem(this.form.value['username'])
@@ -150,7 +156,7 @@ export class RegisterComponent implements OnInit {
         // return localStorage.getItem(username)
         return this.cookieStorage.getItem(username);
     }
-    async challengeReceived(respObj: any, userKey: KeyPair, username: string) {
+    async challengeReceived(respObj: any, userKey: StringKeyPair, username: string) {
         const encryptedChallenge = respObj.encryptedChallenge;
         const ephemeralPubKey = (respObj.ephemeralPubKey);
         const userId = respObj.userId;
