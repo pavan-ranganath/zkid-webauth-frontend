@@ -22,7 +22,12 @@ export class AccountService {
         private http: HttpClient
     ) {
         this.userSubject = new BehaviorSubject(JSON.parse(localStorage.getItem('user')!));
-        this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
+        if (this.userValue != null) {
+            this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
+            
+        } else {
+            this.keyStoreSubject = new BehaviorSubject(null);
+        }
         this.user = this.userSubject.asObservable();
         this.keyStore = this.keyStoreSubject.asObservable();
     }
@@ -34,22 +39,22 @@ export class AccountService {
         return this.keyStoreSubject!.value;
     }
     passKeyRegister(email: string) {
-        return this.http.get(`${environment.apiUrl}/v1/auth/generate-registration-options`,{params:{email:email}})
-            // .pipe(map(user => {
-            //     // store user details and jwt token in local storage to keep user logged in between page refreshes
-            //     // localStorage.setItem('user', JSON.stringify(user));
-            //     // this.userSubject.next(user);
-            //     return user;
-            // }));
+        return this.http.get(`${environment.apiUrl}/v1/auth/generate-registration-options`, { params: { email: email } })
+        // .pipe(map(user => {
+        //     // store user details and jwt token in local storage to keep user logged in between page refreshes
+        //     // localStorage.setItem('user', JSON.stringify(user));
+        //     // this.userSubject.next(user);
+        //     return user;
+        // }));
     }
-    passKeyVerificationResp(opts:any) {
+    passKeyVerificationResp(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/verify-registration`, opts,);
     }
 
     passKeylogin(email: string) {
-        return this.http.get(`${environment.apiUrl}/v1/auth/generate-authentication-options`,{params:{email:email}})
+        return this.http.get(`${environment.apiUrl}/v1/auth/generate-authentication-options`, { params: { email: email } })
     }
-    passKeyLoginVerify(opts:any) {
+    passKeyLoginVerify(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/verify-authentication`, opts,);
     }
     logout() {
@@ -98,17 +103,17 @@ export class AccountService {
             }));
     }
 
-    entradaAuthRegister(opts:any) {
+    entradaAuthRegister(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/generate-entrada-registration-options`, opts);
     }
-    entradaAuthRegistrationVerification(opts:any) {
+    entradaAuthRegistrationVerification(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/verify-entrada-registration`, opts);
     }
 
-    entradaAuthLogin(opts:any) {
+    entradaAuthLogin(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/entrada-login`, opts);
     }
-    public loginSuccess(user: User, keyStore:any) {
+    public loginSuccess(user: User, keyStore: any) {
         localStorage.setItem('user', JSON.stringify(user));
         // sessionStorage.setItem('keyStore',encodeBase64(keyStore));
         this.userSubject.next(user);
@@ -116,8 +121,8 @@ export class AccountService {
         this.keyStoreSubject!.next(userKeyStoreObj);
         return user;
     }
-    verifyEmail(token:string) {
-        return this.http.post(`${environment.apiUrl}/v1/auth/verify-email?token=${token}`,null)
+    verifyEmail(token: string) {
+        return this.http.post(`${environment.apiUrl}/v1/auth/verify-email?token=${token}`, null)
     }
     private getUserKeys(username: string) {
         // return localStorage.getItem(username)
