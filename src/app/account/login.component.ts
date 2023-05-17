@@ -113,16 +113,18 @@ export class LoginComponent implements OnInit {
         this.form = this.formBuilder.group({
             // name: ['', Validators.required],
             username: ['', Validators.required],
+            privateKey: ['', Validators.required],
+            publicKey: ['', Validators.required],
             // password: ['', Validators.required]
         });
     }
 
     // convenience getter for easy access to form fields
     get f() { return this.form.controls; }
-    private getUserKeys(username: string) {
-        // return localStorage.getItem(username)
-        return this.cookieStorage.getItem(username);
-    }
+    // private getUserKeys(username: string) {
+    //     // return localStorage.getItem(username)
+    //     return this.cookieStorage.getItem(username);
+    // }
     login() {
         this.submitted = true;
 
@@ -137,14 +139,16 @@ export class LoginComponent implements OnInit {
 
 
         const username = this.form.value.username
-        let userKeyStore = this.getUserKeys(username)
-        if (!userKeyStore) {
-            alert("Error!!, keystore not found")
-            return
-        }
-        let keyStoreObj = JSON.parse(userKeyStore)
+        // let userKeyStore = this.getUserKeys(username)
+        // if (!userKeyStore) {
+        //     alert("Error!!, keystore not found")
+        //     return
+        // }
+        // let keyStoreObj = JSON.parse(userKeyStore)
+        let keyStoreObj = {privateKey: this.form.value.privateKey, publicKey: this.form.value.publicKey}
+
         // CREATE MESSAGE AND SIGN
-        let plainMsg = `I, ${username} would like to login with my challenge code: ${keyStoreObj.registrationCode} with user ID: ${keyStoreObj.userId}`;
+        let plainMsg = `I, ${username} would like to login`;
         let signedMsg = signEncode(plainMsg, (keyStoreObj.privateKey));
 
         let reqObj = {
