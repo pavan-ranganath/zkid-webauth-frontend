@@ -5,7 +5,7 @@ import { first } from 'rxjs/operators';
 import { startRegistration } from '@simplewebauthn/browser';
 
 import { AccountService, AlertService } from '@app/_services';
-import { decryptWithSharedKey, encryptWithSharedKey, generateKeyPair, generateSharedKey, signEncode } from '@app/_helpers/ed25519Wrapper';
+// import { sign, decryptWithSharedKey, encryptWithSharedKey, generateKeyPair, generateSharedKey } from '@app/_helpers/ed25519Wrapper';
 import {
     decodeBase64,
     decodeUTF8,
@@ -14,10 +14,12 @@ import {
 } from 'tweetnacl-util';
 import * as libSodiumWrapper from "libsodium-wrappers";
 
-import { encrypt, decrypt, sign } from '../_helpers/ed25519Wrapper';
 import { KeyPair, StringKeyPair, randombytes_buf } from 'libsodium-wrappers';
 import { CookieStorage } from 'cookie-storage';
 import { CommonService } from '@app/_services/common.service';
+import { readOpenSslKeys, sign, getSharedKey, verifySign, decryptWithSharedKey, readOpenSslPrivateKeys, convertEd25519PrivateKeyToCurve25519, convertEd25519PublicKeyToCurve25519,encryptWithSharedKey } from '@app/_helpers/ed25519NewWrapper';
+const zKID = 'ZKID_v1';
+
 
 @Component({ templateUrl: 'register.component.html' })
 export class RegisterComponent implements OnInit {
@@ -45,9 +47,9 @@ export class RegisterComponent implements OnInit {
             privateKey: ['', Validators.required],
             publicKey: ['', Validators.required]
         });
-        
+
     }
-    
+
 
     // convenience getter for easy access to form fields
     get f() { return this.form.controls; }
@@ -115,22 +117,33 @@ export class RegisterComponent implements OnInit {
         if (this.form.invalid) {
             return;
         }
-       
+
 
         this.loading = true;
 
-        let privKey = (await this.common.readFileContent(this.form.value.privateKey)).split('\n')[1]
-        let pubKey = (await this.common.readFileContent(this.form.value.publicKey)).split('\n')[1]
+        // let privKey = (await this.common.readFileContent(this.form.value.privateKey)).split('\n')[1]
+        // let pubKey = (await this.common.readFileContent(this.form.value.publicKey)).split('\n')[1]
+        let privKey = (await this.common.readFileContent(this.form.value.privateKey))
+        let pubKey = (await this.common.readFileContent(this.form.value.publicKey))
+        let plainMsg = `I, ${this.form.value.name} would like to register with email "${this.form.value.username}" to ${zKID} service`;
+        let paredKeyPair = readOpenSslKeys(privKey, pubKey)
+        let signedMsg = sign(plainMsg, paredKeyPair.privateKey)
 
         // let reqObj = { ...this.form.value}
         // delete reqObj['privateKey']
-        this.accountService.entradaAuthRegister({username: this.form.value.username, name:  this.form.value.name,publicKey:pubKey})
+        this.accountService.entradaAuthRegister({ username: this.form.value.username, name: this.form.value.name, publicKey: pubKey, plainMsg: plainMsg, signedMsg: signedMsg.toHex() })
             .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    this.storeUserKeys(this.form.value['username'], {username: this.form.value.username, publicKey:pubKey, privateKey: privKey});
+                    this.storeUserKeys(
+                        this.form.value['username'], 
+                        { 
+                            username: this.form.value.username, 
+                            pivateKey: Buffer.from(paredKeyPair.privateKey).toString('base64'),  
+                            publicKey: Buffer.from(paredKeyPair.publicKey).toString('base64')
+                        });
                     // get return url from query parameters or default to home page
-                    this.challengeReceived(opts, {privateKey:privKey,publicKey:pubKey,keyType:'ed25519'}, this.form.value['username']);
+                    this.challengeReceived(opts, paredKeyPair.privateKey, paredKeyPair.publicKey, this.form.value['username']);
                 },
                 error: error => {
                     this.cookieStorage.removeItem(this.form.value['username'])
@@ -143,43 +156,57 @@ export class RegisterComponent implements OnInit {
             });
     }
     private storeUserKeys(username: string, value: Object) {
-        this.cookieStorage.setItem(username, JSON.stringify(value),{
+        this.cookieStorage.setItem(username, JSON.stringify(value), {
             path: '/',
             domain: 'localhost',
             expires: addOneYear(new Date()),
             secure: true,
             sameSite: 'Strict' // Can be 'Strict' or 'Lax'.
-          });
+        });
         // localStorage.setItem(username, JSON.stringify(value));
     }
     private getUserKeys(username: string) {
         // return localStorage.getItem(username)
         return this.cookieStorage.getItem(username);
     }
-    async challengeReceived(respObj: any, userKey: StringKeyPair, username: string) {
-        const encryptedChallenge = respObj.encryptedChallenge;
-        const ephemeralPubKey = (respObj.ephemeralPubKey);
+    async challengeReceived(respObj: any, clientPrivateKey: any, clientPublicKey: any, username: string) {
+        const signedChallengeEncrypt = respObj.signedChallengeEncrypt;
+        const challengeEncrypt = respObj.challengeEncrypt;
+        const ephemeralPubKey = Buffer.from(respObj.ephemeralPubKey, "base64");
         const userId = respObj.userId;
 
-        // DECRYPT CHALLENGE USING USER PUBLIC KEY 
-        let challenge = decrypt(encryptedChallenge, userKey.publicKey, userKey.privateKey);
+        // TODO: VERIFY SIGNATURE
+        // if (!verifySign(signedChallengeEncrypt,challengeEncrypt,(ephemeralPubKey))) {
+        //     this.alertService.error('Invalid Signature');
+        //     return;
+        // }
 
         // GENERATE SHARED SECRET
-        let sharedKey = generateSharedKey(userKey.privateKey, ephemeralPubKey)
-        console.log('sharedKey', sharedKey);
+        let sharedKey = getSharedKey(
+            convertEd25519PrivateKeyToCurve25519(clientPrivateKey),
+            convertEd25519PublicKeyToCurve25519(ephemeralPubKey)
+        )
+
+        console.log('Client shared key (Base64):', Buffer.from(sharedKey).toString('base64'));
+
+        // DECRYPT CHALLENGE USING USER PUBLIC KEY 
+        let challenge = decryptWithSharedKey(challengeEncrypt, sharedKey);
+
         // ENCRYPT CHALLENGE USING SHARED  KEY
-        var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES,"base64")
-        let challengeEncryptWithSharedKey = encryptWithSharedKey(challenge, sharedKey, nonce)
+        // var nonce = libSodiumWrapper.randombytes_buf(libSodiumWrapper.crypto_box_NONCEBYTES,"base64")
+        // let challengeEncryptWithSharedKey = encryptWithSharedKey(challenge, sharedKey, nonce)
 
         // CREATE MESSAGE AND SIGN
-        let plainMsg = `I, ${username} would like to register with my challenge code: ${challenge} with user ID: ${userId}`;
-        let signedMsg = signEncode(plainMsg, userKey.privateKey);
-
+        let msgObj = {
+            username: username,
+            challenge: challenge,
+            userId: userId
+        }
+        let encryptedData = encryptWithSharedKey(JSON.stringify(msgObj),sharedKey)
+        let afterSignature = sign(encryptedData, clientPrivateKey);
         let reqObj = {
-            plainMsg: plainMsg,
-            signedMsg: signedMsg,
-            encryptedChallengeWithShared: challengeEncryptWithSharedKey,
-            nonce: nonce
+            signature: afterSignature.toHex(),
+            encryptedData: encryptedData,
         }
 
 
@@ -195,7 +222,7 @@ export class RegisterComponent implements OnInit {
                     let registrationCode = opts.registrationCode
 
                     // DECRYPT REGISTRATION CODE
-                    let plainRegistrationCode = decryptWithSharedKey(registrationCode.encryptedData, sharedKey, registrationCode.nonce)
+                    let plainRegistrationCode = decryptWithSharedKey(registrationCode, sharedKey)
                     let tempKeyStoreObj = JSON.parse(userKeyStore)
 
                     // STORE USER INFO IN LOCAL STORAGE
@@ -219,7 +246,7 @@ export class RegisterComponent implements OnInit {
     }
 
 }
-function addOneYear(date:any) {
+function addOneYear(date: any) {
     date.setFullYear(date.getFullYear() + 1);
     return date;
-  }
+}
