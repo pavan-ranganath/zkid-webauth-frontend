@@ -43,7 +43,7 @@ export class RegisterComponent implements OnInit {
     ngOnInit() {
         this.form = this.formBuilder.group({
             name: ['pavan ranganath', Validators.required],
-            username: ['pavanr@entradasolutions.com', Validators.required],
+            username: ['pavanranganath@egstech.org', Validators.required],
             privateKey: ['', Validators.required],
             publicKey: ['', Validators.required]
         });
@@ -135,13 +135,13 @@ export class RegisterComponent implements OnInit {
             .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    this.storeUserKeys(
+                    sessionStorage.setItem(
                         this.form.value['username'], 
-                        { 
+                        JSON.stringify({ 
                             username: this.form.value.username, 
                             pivateKey: Buffer.from(paredKeyPair.privateKey).toString('base64'),  
                             publicKey: Buffer.from(paredKeyPair.publicKey).toString('base64')
-                        });
+                        }));
                     // get return url from query parameters or default to home page
                     this.challengeReceived(opts, paredKeyPair.privateKey, paredKeyPair.publicKey, this.form.value['username']);
                 },
@@ -156,18 +156,27 @@ export class RegisterComponent implements OnInit {
             });
     }
     private storeUserKeys(username: string, value: Object) {
-        this.cookieStorage.setItem(username, JSON.stringify(value), {
-            path: '/',
-            domain: 'localhost',
-            expires: addOneYear(new Date()),
-            secure: true,
-            sameSite: 'Strict' // Can be 'Strict' or 'Lax'.
-        });
-        // localStorage.setItem(username, JSON.stringify(value));
+    
+        // this.cookieStorage.setItem(username, JSON.stringify(value), {
+        //     path: '/',
+        //     domain: 'localhost',
+        //     expires: addOneYear(new Date()),
+        //     secure: true,
+        //     sameSite: 'Strict' // Can be 'Strict' or 'Lax'.
+        // });
+        let users = this.getUsers('users')
+        if (users) { 
+            let t = JSON.parse(users);
+            t.push({...value})    
+            localStorage.setItem('users', JSON.stringify(t));        
+        } else {
+            localStorage.setItem('users', JSON.stringify([{...value}]));
+        }
+       
     }
-    private getUserKeys(username: string) {
-        // return localStorage.getItem(username)
-        return this.cookieStorage.getItem(username);
+    private getUsers(users: string) {
+        return localStorage.getItem(users)
+        // return this.cookieStorage.getItem(username);
     }
     async challengeReceived(respObj: any, clientPrivateKey: any, clientPublicKey: any, username: string) {
         const signedChallengeEncrypt = respObj.signedChallengeEncrypt;
@@ -214,7 +223,7 @@ export class RegisterComponent implements OnInit {
             .pipe(first())
             .subscribe({
                 next: (opts: any) => {
-                    let userKeyStore = this.getUserKeys(username)
+                    let userKeyStore = sessionStorage.getItem(username)
                     if (!userKeyStore) {
                         alert("Error!!, keystore not found")
                         return
@@ -234,12 +243,12 @@ export class RegisterComponent implements OnInit {
                 error: error => {
                     this.alertService.error(error);
                     // this.loading = false;
-                    this.cookieStorage.removeItem(this.form.value['username'])
                 },
                 complete: () => {
                     this.loading = false;
                     this.registerDisabled = true;
                     this.loginDisabled = false;
+                    sessionStorage.clear();
                 },
             });
 
