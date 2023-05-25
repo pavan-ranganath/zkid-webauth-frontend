@@ -8,87 +8,10 @@ import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 import { AccountService, AlertService } from '@app/_services';
 import { AuthenticationResponseJSON } from '@simplewebauthn/typescript-types';
 import { CookieStorage } from 'cookie-storage';
-import { generateSharedKey, signEncode } from '@app/_helpers/ed25519Wrapper';
+import { convertEd25519PrivateKeyToCurve25519, convertEd25519PublicKeyToCurve25519, getSharedKey, readOpenSslKeys, sign } from '@app/_helpers/ed25519NewWrapper';
 import { CommonService } from '@app/_services/common.service';
 
-@Component({ templateUrl: 'login.component.html'})
-// export class LoginComponent implements OnInit {
-//     submitted = false;
-//     loginForm!: FormGroup;
-//     loginLoading = false;
-
-//     constructor(
-//         private formBuilder: FormBuilder,
-//         private route: ActivatedRoute,
-//         private router: Router,
-//         private accountService: AccountService,
-//         private alertService: AlertService
-//     ) { }
-
-//     ngOnInit() {
-
-//         this.loginForm = this.formBuilder.group({
-//             email: ['', Validators.required],
-//             // password: ['', Validators.required]
-//         });
-//     }
-
-//     get fLogin() { return this.loginForm.controls; }
-
-//     loginOnSubmit() {
-//         let credential: Credential | null;
-//         this.submitted = true;
-
-//         // reset alerts on submit
-//         this.alertService.clear();
-//         // stop here if form is invalid
-//         if (this.loginForm.invalid) {
-//             return;
-//         }
-//         this.loginLoading = true;
-//         this.accountService.passKeylogin(this.fLogin.email.value)
-//         .pipe(first())
-//         .subscribe({
-//                 next: async (opts: any)=>{
-//                     try {
-//                         // crypto.subtle.encrypt()
-//                         credential = (await navigator.credentials.get());
-//                     }
-//                     catch (err) {
-//                         console.error(err);
-//                     }
-//                     if (!credential) {
-//                         throw new Error('Authentication was not completed');
-//                     }
-//                     // let assesResp = await startAuthentication(opts)
-//                     // this.verifyLogin(assesResp);
-//                 },
-//                 error: (error) => {
-//                     this.alertService.error(error);
-//                     this.loginLoading = false;
-//                 },
-//                 complete: () => {
-
-//                 },
-
-//             })
-//     }
-
-//     private verifyLogin(assesResp:AuthenticationResponseJSON) {
-//         this.accountService.passKeyLoginVerify(assesResp).subscribe({
-//             next: (value) => {
-//                 console.log('passKeyLoginVerify', value)
-//                 alert("Authentication completed")
-//             },
-//             error: (err) => {
-//                 console.error('verificationErrResp', err);
-//             },
-//             complete: () => {
-//                 this.loginLoading = false;
-//             },
-//         });
-//     }
-// }
+@Component({ templateUrl: 'login.component.html' })
 export class LoginComponent implements OnInit {
     form!: FormGroup;
     loading = false;
@@ -98,6 +21,7 @@ export class LoginComponent implements OnInit {
     userInfo: any;
     userList: any[] | undefined = [];
     cookieStorage = new CookieStorage();
+    usersFromStorage!: any;
 
     constructor(
         private formBuilder: FormBuilder,
@@ -106,18 +30,23 @@ export class LoginComponent implements OnInit {
         private router: Router,
         private route: ActivatedRoute,
         private common: CommonService
-        // private cookieStorage:CookieStorage
     ) { }
 
     ngOnInit() {
 
         this.form = this.formBuilder.group({
-            // name: ['', Validators.required],
             username: ['', Validators.required],
             privateKey: ['', Validators.required],
             publicKey: ['', Validators.required],
-            // password: ['', Validators.required]
         });
+        this.loadUsersFromStorage();
+    }
+
+    loadUsersFromStorage() {
+        let _users = localStorage.getItem('users')
+        if (_users) {
+            this.usersFromStorage = JSON.parse(_users);
+        }
     }
 
     // convenience getter for easy access to form fields
@@ -140,34 +69,42 @@ export class LoginComponent implements OnInit {
 
 
         const username = this.form.value.username
-        // let userKeyStore = this.getUserKeys(username)
-        // if (!userKeyStore) {
-        //     alert("Error!!, keystore not found")
-        //     return
-        // }
-        // let keyStoreObj = JSON.parse(userKeyStore)
-       
+
         let privKey = await this.common.readFileContent(this.form.value.privateKey)
         let pubKey = await this.common.readFileContent(this.form.value.publicKey)
-        let keyStoreObj = {privateKey: privKey.split('\n')[1], publicKey: pubKey.split('\n')[1]}
 
-        // CREATE MESSAGE AND SIGN
+        // READ openssl private key and public key
+        let keyPair = readOpenSslKeys(privKey, pubKey)
+
+        this.sendRequestToServer(
+            username,
+            Buffer.from(keyPair.privateKey).toString('base64'),
+            Buffer.from(keyPair.publicKey).toString('base64'));
+    }
+    private sendRequestToServer(username: any, privateKey: string, publicKey: string) {
         let plainMsg = `I, ${username} would like to login`;
-        let signedMsg = signEncode(plainMsg, (keyStoreObj.privateKey));
+        let bufferPrivateKey = Buffer.from(privateKey, 'base64')
+        let signature = sign(plainMsg, bufferPrivateKey);
 
         let reqObj = {
             username: username,
-            signedMsg: signedMsg,
+            signature: signature.toHex(),
             plainMsg: plainMsg
-        }
+        };
         this.accountService.entradaAuthLogin(reqObj)
             .pipe(first())
             .subscribe({
                 next: (succResp: any) => {
-                    console.log("succResp",succResp);
-                     // GENERATE SHARED SECRET
-                    let sharedKey = generateSharedKey((keyStoreObj.privateKey), (succResp.ephemeralPubKey))
-                    this.accountService.loginSuccess(succResp.user,sharedKey)
+                    console.log("succResp", succResp);
+                    // GENERATE SHARED SECRET
+                    let sharedKey = getSharedKey(
+                        convertEd25519PrivateKeyToCurve25519(bufferPrivateKey),
+                        convertEd25519PublicKeyToCurve25519(Buffer.from(succResp.ephemeralPubKey, "base64"))
+                    );
+                    this.accountService.loginSuccess(
+                        succResp.user,
+                        Buffer.from(sharedKey).toString('base64')
+                        );
                     const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
                     this.router.navigateByUrl(returnUrl);
                     // this.router.navigateByUrl('/home');
@@ -181,5 +118,9 @@ export class LoginComponent implements OnInit {
                 },
             });
     }
-   
+
+    loginUsingStoredDetails(userInfo: any) {
+        this.sendRequestToServer(userInfo.username, userInfo.privateKey, userInfo.publicKey)
+    }
+
 }

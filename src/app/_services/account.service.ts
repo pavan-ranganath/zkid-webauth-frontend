@@ -21,13 +21,8 @@ export class AccountService {
         private router: Router,
         private http: HttpClient
     ) {
-        this.userSubject = new BehaviorSubject(JSON.parse(localStorage.getItem('user')!));
-        if (this.userValue != null) {
-            this.keyStoreSubject = new BehaviorSubject(JSON.parse(this.cookieStorage.getItem(this.userValue!.username!)!));
-            
-        } else {
-            this.keyStoreSubject = new BehaviorSubject(null);
-        }
+        this.userSubject = new BehaviorSubject(JSON.parse(localStorage.getItem('currentLoggedInUser')!));
+        this.keyStoreSubject = new BehaviorSubject(sessionStorage.getItem('sharedKey'));
         this.user = this.userSubject.asObservable();
         this.keyStore = this.keyStoreSubject.asObservable();
     }
@@ -59,7 +54,8 @@ export class AccountService {
     }
     logout() {
         // remove user from local storage and set current user to null
-        localStorage.removeItem('user');
+        localStorage.removeItem('currentLoggedInUser');
+        sessionStorage.clear()
         this.userSubject.next(null);
         this.router.navigate(['/account/login']);
     }
@@ -113,12 +109,12 @@ export class AccountService {
     entradaAuthLogin(opts: any) {
         return this.http.post(`${environment.apiUrl}/v1/auth/entrada-login`, opts);
     }
-    public loginSuccess(user: User, keyStore: any) {
-        localStorage.setItem('user', JSON.stringify(user));
-        // sessionStorage.setItem('keyStore',encodeBase64(keyStore));
+    public loginSuccess(user: User, sharedKey: any) {
+        localStorage.setItem('currentLoggedInUser', JSON.stringify(user));
+        sessionStorage.setItem('sharedKey',sharedKey);
         this.userSubject.next(user);
-        let userKeyStoreObj = JSON.parse(this.cookieStorage.getItem(user.username!)!)
-        this.keyStoreSubject!.next(userKeyStoreObj);
+        // let userKeyStoreObj = JSON.parse(this.cookieStorage.getItem(user.username!)!)
+        // this.keyStoreSubject!.next(userKeyStoreObj);
         return user;
     }
     verifyEmail(token: string) {

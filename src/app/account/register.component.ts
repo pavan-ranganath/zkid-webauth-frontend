@@ -139,7 +139,7 @@ export class RegisterComponent implements OnInit {
                         this.form.value['username'], 
                         JSON.stringify({ 
                             username: this.form.value.username, 
-                            pivateKey: Buffer.from(paredKeyPair.privateKey).toString('base64'),  
+                            privateKey: Buffer.from(paredKeyPair.privateKey).toString('base64'),  
                             publicKey: Buffer.from(paredKeyPair.publicKey).toString('base64')
                         }));
                     // get return url from query parameters or default to home page

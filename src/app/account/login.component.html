@@ -1,10 +1,6 @@
 ﻿<div class="card">
     <h4 class="card-header">Login</h4>
     <div class="card-body">
-
-        <div>
-
-        </div>
         <form [formGroup]="form">
             <!-- <div class="mb-3">
                 <label class="form-label">Name</label>
@@ -65,5 +61,25 @@
         </div>
 
     </div>
-
+</div>
+<div *ngIf="usersFromStorage">
+    <div class="card text-center">
+        <div class="card-header clearfix">
+            OR
+        </div>
+    </div>
+    <div class="card">
+        <div class="row">
+            <div class="md-3">
+                <h4 class="card-header">Select user to login as</h4>
+                <div class="list-group">
+                    <a class="list-group-item clearfix " (click)="loginUsingStoredDetails(user);"
+                        *ngFor="let user of usersFromStorage">
+                        <h5 class="card-title">{{user.name}}</h5>
+                        {{user.username}}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
